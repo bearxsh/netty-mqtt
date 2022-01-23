@@ -1,5 +1,6 @@
 package com.bearxsh.broker;
 
+import com.bearxsh.broker.handler.MqttMessageHandler;
 import com.bearxsh.broker.handler.MqttServerHandler;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
@@ -33,6 +34,7 @@ public class MqttBroker {
                             pipeline.addLast(new MqttDecoder());
                             pipeline.addLast(MqttEncoder.INSTANCE);
                             pipeline.addLast(new MqttServerHandler());
+                            pipeline.addLast(new MqttMessageHandler());
                         }
                     });
             ChannelFuture future = serverBootstrap.bind(port).sync();
