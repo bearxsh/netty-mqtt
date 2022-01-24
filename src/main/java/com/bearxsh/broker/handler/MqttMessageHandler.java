@@ -63,7 +63,7 @@ public class MqttMessageHandler extends SimpleChannelInboundHandler<MqttMessage>
                     ByteBuf payload = mqttPublishMessage.payload();
                     byte[] arr = new byte[payload.readableBytes()];
                     payload.readBytes(arr);
-                    Message msg = new Message("TopicTest", "TagA", arr);
+                    Message msg = new Message(mqttPublishMessage.variableHeader().topicName(), arr);
                     System.out.println(msg.toString());
                     //Call send message to deliver message to one of brokers.
                     SendResult sendResult = getProducer().send(msg);

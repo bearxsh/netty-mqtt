@@ -11,15 +11,17 @@ import java.time.LocalDateTime;
 public class MqttProducer {
     public static void main(String[] args) {
 
-        String topic        = "MQTT Examples";
+        String topic        = "MQTTExamples";
         String content      = "Message from MqttPublishSample";
-        int qos             = 2;
+        int qos             = 1;
         String broker       = "tcp://localhost:1883";
         String clientId     = "JavaSample";
         MemoryPersistence persistence = new MemoryPersistence();
 
         try {
             MqttClient sampleClient = new MqttClient(broker, clientId, persistence);
+            // 设置客户端发送超时时间，防止无限阻塞。但是感觉没用啊，依旧阻塞
+            sampleClient.setTimeToWait(5000);
             MqttConnectOptions connOpts = new MqttConnectOptions();
             connOpts.setCleanSession(true);
             System.out.println("Connecting to broker: "+broker);
@@ -34,11 +36,6 @@ public class MqttProducer {
             System.out.println("Disconnected");
             System.exit(0);
         } catch(MqttException me) {
-            System.out.println("reason "+me.getReasonCode());
-            System.out.println("msg "+me.getMessage());
-            System.out.println("loc "+me.getLocalizedMessage());
-            System.out.println("cause "+me.getCause());
-            System.out.println("excep "+me);
             me.printStackTrace();
         }
     }
