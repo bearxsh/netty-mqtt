@@ -3,6 +3,7 @@ package com.bearxsh.test;
 import org.apache.rocketmq.client.consumer.DefaultMQPushConsumer;
 import org.apache.rocketmq.client.consumer.listener.ConsumeConcurrentlyContext;
 import org.apache.rocketmq.client.consumer.listener.ConsumeConcurrentlyStatus;
+import org.apache.rocketmq.client.consumer.listener.MessageListener;
 import org.apache.rocketmq.client.consumer.listener.MessageListenerConcurrently;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.common.consumer.ConsumeFromWhere;
@@ -20,17 +21,6 @@ public class Consumer {
          */
         DefaultMQPushConsumer consumer = new DefaultMQPushConsumer("please_rename_unique_group_name_4");
 
-        /*
-         * Specify name server addresses.
-         * <p/>
-         *
-         * Alternatively, you may specify name server addresses via exporting environmental variable: NAMESRV_ADDR
-         * <pre>
-         * {@code
-         *
-         * }
-         * </pre>
-         */
         consumer.setNamesrvAddr("localhost:9876");
         /*
          * Specify where to start in case the specific consumer group is a brand-new one.
@@ -40,11 +30,13 @@ public class Consumer {
         /*
          * Subscribe one more topic to consume.
          */
-        consumer.subscribe("TopicTest", "*");
+        consumer.subscribe("push", "*");
 
         /*
          *  Register callback to execute on arrival of messages fetched from brokers.
          */
+        consumer.registerMessageListener(new MessageListener() {
+        });
         consumer.registerMessageListener(new MessageListenerConcurrently() {
 
             @Override
@@ -55,12 +47,10 @@ public class Consumer {
                     System.out.println(LocalDateTime.now() + " receive: " + new String(messageExt.getBody()));
                 });
                 return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
+                //return ConsumeConcurrentlyStatus.RECONSUME_LATER;
             }
         });
 
-        /*
-         *  Launch the consumer instance.
-         */
         consumer.start();
 
         System.out.printf("Consumer Started.%n");

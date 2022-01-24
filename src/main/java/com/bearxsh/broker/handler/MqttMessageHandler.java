@@ -1,6 +1,7 @@
 package com.bearxsh.broker.handler;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -11,6 +12,10 @@ import org.apache.rocketmq.client.producer.SendResult;
 import org.apache.rocketmq.common.message.Message;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * see http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html
@@ -19,6 +24,7 @@ import java.time.LocalDateTime;
  */
 @ChannelHandler.Sharable
 public class MqttMessageHandler extends SimpleChannelInboundHandler<MqttMessage> {
+    public static final Map<String/*topic*/, Set<Channel>> subsribeMap = new ConcurrentHashMap<>();
 
     DefaultMQProducer producer;
 
@@ -68,8 +74,18 @@ public class MqttMessageHandler extends SimpleChannelInboundHandler<MqttMessage>
                 }
                 break;
             case SUBSCRIBE:
+                // TODO, 处理
                 // 目前仅支持一次订阅一个topic
                 MqttSubscribeMessage mqttSubscribeMessage = (MqttSubscribeMessage) mqttMessage;
+                String topicName = mqttSubscribeMessage.payload().topicSubscriptions().get(0).topicName();
+                Set<Channel> channelSet = subsribeMap.get(topicName);
+                if (channelSet == null) {
+                    channelSet = new HashSet<>();
+                    channelSet.add(ctx.channel());
+                    subsribeMap.put(topicName, channelSet);
+                } else {
+                    channelSet.add(ctx.channel());
+                }
                 mqttFixedHeader = new MqttFixedHeader(MqttMessageType.SUBACK, false, MqttQoS.AT_MOST_ONCE, false, 0x03);
                 MqttSubAckPayload mqttSubAckPayload = new MqttSubAckPayload(mqttSubscribeMessage.payload().topicSubscriptions().get(0).qualityOfService().value());
                 MqttSubAckMessage mqttSubAckMessage = new MqttSubAckMessage(mqttFixedHeader, MqttMessageIdVariableHeader.from(mqttSubscribeMessage.variableHeader().messageId()), mqttSubAckPayload);
@@ -85,6 +101,7 @@ public class MqttMessageHandler extends SimpleChannelInboundHandler<MqttMessage>
                 // TODO
                 break;
             default:
+                System.out.println(mqttMessage);
                 System.out.println("error: unknown mqtt message!");
                 break;
         }
