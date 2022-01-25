@@ -1,27 +1,23 @@
 package com.bearxsh.test;
 
-import org.eclipse.paho.client.mqttv3.MqttClient;
-import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
-import org.eclipse.paho.client.mqttv3.MqttException;
-import org.eclipse.paho.client.mqttv3.MqttMessage;
+import org.eclipse.paho.client.mqttv3.*;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 
 import java.time.LocalDateTime;
 
-public class MqttProducer {
+public class MqttAsyncProducer {
     public static void main(String[] args) {
 
         String topic        = "MQTTExamples";
         String content      = "Message from MqttPublishSample";
         int qos             = 1;
-        String broker       = "tcp://39.96.210.14:1883";
+        String broker       = "tcp://localhost:1883";
         String clientId     = "JavaSample";
         MemoryPersistence persistence = new MemoryPersistence();
 
         try {
-            MqttClient sampleClient = new MqttClient(broker, clientId, persistence);
+            MqttAsyncClient sampleClient = new MqttAsyncClient(broker, clientId, persistence);
             // 设置客户端发送超时时间，防止无限阻塞。但是感觉没用啊，依旧阻塞
-            //sampleClient.setTimeToWait(5000);
             MqttConnectOptions connOpts = new MqttConnectOptions();
             connOpts.setCleanSession(true);
             System.out.println("Connecting to broker: "+broker);
@@ -30,8 +26,12 @@ public class MqttProducer {
             System.out.println(LocalDateTime.now() + " Publishing message: "+content);
             MqttMessage message = new MqttMessage(content.getBytes());
             message.setQos(qos);
+            while (!sampleClient.isConnected()) {
 
-            sampleClient.publish(topic, message);
+            }
+
+            IMqttDeliveryToken publish = sampleClient.publish(topic, message);
+            publish.waitForCompletion();
             System.out.println("Message published");
             sampleClient.disconnect();
             System.out.println("Disconnected");

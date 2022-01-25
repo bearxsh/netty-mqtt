@@ -18,9 +18,10 @@ public class Producer {
         producer.setNamesrvAddr("localhost:9876");
         //Launch the instance.
         producer.start();
-        Message msg = new Message("push", "TagA", ("Hello RocketMQ 2022").getBytes(RemotingHelper.DEFAULT_CHARSET));
-        msg.putUserProperty("MQTT_TOPIC", "ecloud_device_heartbeat");
+
+        //msg.putUserProperty("MQTT_TOPIC", "ecloud_device_heartbeat");
         for (int i = 0; i < 100; i++) {
+            Message msg = new Message("TopicTest2022", "TagA", ("Hello RocketMQ 2022" + i).getBytes(RemotingHelper.DEFAULT_CHARSET));
             System.out.println(LocalDateTime.now() + " 发送消息！" + i);
             SendResult sendResult = producer.send(msg);
             System.out.printf("%s%n", sendResult);

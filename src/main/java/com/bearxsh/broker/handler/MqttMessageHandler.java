@@ -8,11 +8,14 @@ import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.mqtt.*;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.client.producer.DefaultMQProducer;
+import org.apache.rocketmq.client.producer.MessageQueueSelector;
 import org.apache.rocketmq.client.producer.SendResult;
 import org.apache.rocketmq.common.message.Message;
+import org.apache.rocketmq.common.message.MessageQueue;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -58,15 +61,22 @@ public class MqttMessageHandler extends SimpleChannelInboundHandler<MqttMessage>
                     System.out.println(mqttPublishMessage.payload().toString());
                     mqttFixedHeader = new MqttFixedHeader(MqttMessageType.PUBACK, false, MqttQoS.AT_MOST_ONCE, false, 0x02);
                     MqttPubAckMessage mqttPubAckMessage = new MqttPubAckMessage(mqttFixedHeader, MqttMessageIdVariableHeader.from(mqttPublishMessage.variableHeader().packetId()));
-                    ctx.writeAndFlush(mqttPubAckMessage);
+                    //ctx.writeAndFlush(mqttPubAckMessage);
 
                     ByteBuf payload = mqttPublishMessage.payload();
                     byte[] arr = new byte[payload.readableBytes()];
                     payload.readBytes(arr);
+
                     Message msg = new Message(mqttPublishMessage.variableHeader().topicName(), arr);
-                    System.out.println(msg.toString());
-                    //Call send message to deliver message to one of brokers.
-                    SendResult sendResult = getProducer().send(msg);
+                    mqttPublishMessage.variableHeader().
+                    SendResult sendResult = getProducer().send(msg, new MessageQueueSelector() {
+                        @Override
+                        public MessageQueue select(List<MessageQueue> mqs, Message msg, Object arg) {
+                            Long id = (Long) arg;  //根据订单id选择发送queue
+                            long index = id % mqs.size();
+                            return mqs.get((int) index);
+                        }
+                    }, mqttPublishMessage);//订单id
                     System.out.printf("%s%n", sendResult);
                 } else if (mqttQoS == MqttQoS.EXACTLY_ONCE) {
                     // 不支持，直接关闭连接
