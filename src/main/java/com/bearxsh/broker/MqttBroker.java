@@ -70,7 +70,7 @@ public class MqttBroker {
                             System.out.println(messageExt.getUserProperty("MQTT_TOPIC"));
                             String topic = messageExt.getUserProperty("MQTT_TOPIC");
                             if (topic != null) {
-                                Set<Channel> channelSet = MqttMessageHandler.subsribeMap.get(topic);
+                                Set<Channel> channelSet = MqttMessageHandler.SUBSCRIBE_MAP.get(topic);
                                 channelSet.forEach(channel -> {
                                     if (channel.isActive()) {
                                         int remainingLength = 2 + topic.getBytes().length + 2 + messageExt.getBody().length;

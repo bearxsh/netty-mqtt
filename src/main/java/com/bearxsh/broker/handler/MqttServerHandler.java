@@ -17,11 +17,13 @@ import java.util.concurrent.ConcurrentHashMap;
 @ChannelHandler.Sharable
 public class MqttServerHandler extends SimpleChannelInboundHandler<MqttConnectMessage> {
 
-    public static final Map<Channel, String> = new ConcurrentHashMap<>();
+    public static final Map<Channel, String/*clientId*/> CHANNEL_CLIENT_MAP = new ConcurrentHashMap<>();
+
     @Override
     protected void channelRead0(ChannelHandlerContext channelHandlerContext, MqttConnectMessage mqttConnectMessage) {
         // TODO 保存channel到clientId的映射
         String clientId = mqttConnectMessage.payload().clientIdentifier();
+        CHANNEL_CLIENT_MAP.put(channelHandlerContext.channel(), clientId);
         MqttFixedHeader mqttFixedHeader = new MqttFixedHeader(MqttMessageType.CONNACK, false, MqttQoS.AT_MOST_ONCE, false, 0x02);
         MqttConnAckVariableHeader mqttConnAckVariableHeader = new MqttConnAckVariableHeader(MqttConnectReturnCode.CONNECTION_ACCEPTED, false);
         MqttConnAckMessage mqttConnAckMessage = new MqttConnAckMessage(mqttFixedHeader, mqttConnAckVariableHeader);
