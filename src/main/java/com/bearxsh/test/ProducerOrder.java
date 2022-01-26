@@ -32,19 +32,22 @@ public class ProducerOrder {
         Date date = new Date();
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         String dateStr = sdf.format(date);
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 1; i++) {
             // 加个时间前缀
-            String body = dateStr + " Hello RocketMQ " + orderList.get(i);
-            Message msg = new Message("TopicTest2022", body.getBytes());
+            String body = dateStr + " Hello RocketMQ " + i + " " + orderList.get(i);
+            Message msg = new Message("push", body.getBytes());
+            String mqttTopic = "ecloud_device_heartbeat";
+            msg.putUserProperty("MQTT_TOPIC", mqttTopic);
             System.out.println(LocalDateTime.now() + "send a message...");
             SendResult sendResult = producer.send(msg, new MessageQueueSelector() {
                 @Override
                 public MessageQueue select(List<MessageQueue> mqs, Message msg, Object arg) {
-                    Long id = (Long) arg;  //根据订单id选择发送queue
-                    long index = id % mqs.size();
-                    return mqs.get((int) index);
+                    String mqttTopic = (String) arg;
+                    int index = mqttTopic.hashCode() % mqs.size();
+                    System.out.println("send to queue: " + Math.abs(index));
+                    return mqs.get(Math.abs(index));
                 }
-            }, orderList.get(i).getOrderId());//订单id
+            }, mqttTopic);
 
             System.out.println(String.format("SendResult status:%s, queueId:%d, body:%s",
                     sendResult.getSendStatus(),

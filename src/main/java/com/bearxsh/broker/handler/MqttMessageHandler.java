@@ -15,10 +15,8 @@ import org.apache.rocketmq.common.message.Message;
 import org.apache.rocketmq.common.message.MessageQueue;
 
 import java.time.LocalDateTime;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -29,7 +27,10 @@ import java.util.concurrent.ConcurrentHashMap;
 @ChannelHandler.Sharable
 public class MqttMessageHandler extends SimpleChannelInboundHandler<MqttMessage> {
 
-    public static final Map<String/*topic*/, Set<Channel>> SUBSCRIBE_MAP = new ConcurrentHashMap<>();
+    /**
+     * 一个topic只能有一个终端订阅
+     */
+    public static final Map<String/*topic*/, Channel> SUBSCRIBE_MAP = new ConcurrentHashMap<>();
 
     DefaultMQProducer producer;
 
@@ -91,16 +92,16 @@ public class MqttMessageHandler extends SimpleChannelInboundHandler<MqttMessage>
                 break;
             case SUBSCRIBE:
                 // TODO, 处理
-                // 目前仅支持一次订阅一个topic
+                // 目前仅支持一次订阅一个topic，一个topic只能被一个终端订阅
                 MqttSubscribeMessage mqttSubscribeMessage = (MqttSubscribeMessage) mqttMessage;
                 String topicName = mqttSubscribeMessage.payload().topicSubscriptions().get(0).topicName();
-                Set<Channel> channelSet = SUBSCRIBE_MAP.get(topicName);
-                if (channelSet == null) {
-                    channelSet = new HashSet<>();
-                    channelSet.add(ctx.channel());
-                    SUBSCRIBE_MAP.put(topicName, channelSet);
+                Channel channel = SUBSCRIBE_MAP.get(topicName);
+                if (channel == null || !channel.isActive()) {
+                    SUBSCRIBE_MAP.put(topicName, ctx.channel());
                 } else {
-                    channelSet.add(ctx.channel());
+                    System.err.println("已经被订阅，关闭连接");
+                    ctx.close();
+                    return;
                 }
                 mqttFixedHeader = new MqttFixedHeader(MqttMessageType.SUBACK, false, MqttQoS.AT_MOST_ONCE, false, 0x03);
                 MqttSubAckPayload mqttSubAckPayload = new MqttSubAckPayload(mqttSubscribeMessage.payload().topicSubscriptions().get(0).qualityOfService().value());
@@ -108,13 +109,14 @@ public class MqttMessageHandler extends SimpleChannelInboundHandler<MqttMessage>
                 ctx.writeAndFlush(mqttSubAckMessage);
                 break;
             case UNSUBSCRIBE:
+                // TODO 取消订阅
                 MqttUnsubscribeMessage mqttUnsubscribeMessage = (MqttUnsubscribeMessage) mqttMessage;
                 mqttFixedHeader = new MqttFixedHeader(MqttMessageType.UNSUBACK, false, MqttQoS.AT_MOST_ONCE, false, 0x02);
                 MqttUnsubAckMessage mqttUnsubAckMessage = new MqttUnsubAckMessage(mqttFixedHeader, MqttMessageIdVariableHeader.from(mqttUnsubscribeMessage.variableHeader().messageId()));
                 ctx.writeAndFlush(mqttUnsubAckMessage);
                 break;
             case DISCONNECT:
-                // TODO
+                ctx.close();
                 break;
             default:
                 System.out.println(mqttMessage);

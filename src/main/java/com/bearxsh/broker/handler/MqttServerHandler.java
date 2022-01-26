@@ -21,7 +21,7 @@ public class MqttServerHandler extends SimpleChannelInboundHandler<MqttConnectMe
 
     @Override
     protected void channelRead0(ChannelHandlerContext channelHandlerContext, MqttConnectMessage mqttConnectMessage) {
-        // TODO 保存channel到clientId的映射
+        // TODO 保存channel到clientId的映射，clientId不能重复，如果重复则踢掉旧连接
         String clientId = mqttConnectMessage.payload().clientIdentifier();
         CHANNEL_CLIENT_MAP.put(channelHandlerContext.channel(), clientId);
         MqttFixedHeader mqttFixedHeader = new MqttFixedHeader(MqttMessageType.CONNACK, false, MqttQoS.AT_MOST_ONCE, false, 0x02);

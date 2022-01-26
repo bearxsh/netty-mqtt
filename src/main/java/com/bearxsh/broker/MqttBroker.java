@@ -15,16 +15,16 @@ import io.netty.handler.codec.mqtt.*;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import org.apache.rocketmq.client.consumer.DefaultMQPushConsumer;
-import org.apache.rocketmq.client.consumer.listener.ConsumeConcurrentlyContext;
-import org.apache.rocketmq.client.consumer.listener.ConsumeConcurrentlyStatus;
-import org.apache.rocketmq.client.consumer.listener.MessageListenerConcurrently;
+import org.apache.rocketmq.client.consumer.listener.ConsumeOrderlyContext;
+import org.apache.rocketmq.client.consumer.listener.ConsumeOrderlyStatus;
+import org.apache.rocketmq.client.consumer.listener.MessageListenerOrderly;
 import org.apache.rocketmq.client.exception.MQClientException;
+import org.apache.rocketmq.client.log.ClientLogger;
 import org.apache.rocketmq.common.consumer.ConsumeFromWhere;
 import org.apache.rocketmq.common.message.MessageExt;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Set;
 
 /**
  * @author bearx
@@ -32,6 +32,7 @@ import java.util.Set;
 public class MqttBroker {
     private static int packetId = 0;
     public static void main(String[] args) {
+        System.setProperty(ClientLogger.CLIENT_LOG_ADDITIVE, "true");
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -39,7 +40,7 @@ public class MqttBroker {
                 /*
                  * Instantiate with specified consumer group name.
                  */
-                DefaultMQPushConsumer consumer = new DefaultMQPushConsumer("please_rename_unique_group_name_4");
+                DefaultMQPushConsumer consumer = new DefaultMQPushConsumer("consumer-1");
 
                 consumer.setNamesrvAddr("localhost:9876");
                 /*
@@ -56,35 +57,36 @@ public class MqttBroker {
                     e.printStackTrace();
                 }
 
-                /*
-                 *  Register callback to execute on arrival of messages fetched from brokers.
-                 */
-                consumer.registerMessageListener(new MessageListenerConcurrently() {
-
+                consumer.registerMessageListener(new MessageListenerOrderly() {
                     @Override
-                    public ConsumeConcurrentlyStatus consumeMessage(List<MessageExt> msgs,
-                                                                    ConsumeConcurrentlyContext context) {
-                        System.out.printf("%s Receive New Messages: %s %n", Thread.currentThread().getName(), msgs);
+                    public ConsumeOrderlyStatus consumeMessage(List<MessageExt> msgs, ConsumeOrderlyContext context) {
+                        context.setAutoCommit(true);
                         msgs.forEach(messageExt -> {
                             System.out.println(LocalDateTime.now() + " receive: " + new String(messageExt.getBody()));
                             System.out.println(messageExt.getUserProperty("MQTT_TOPIC"));
                             String topic = messageExt.getUserProperty("MQTT_TOPIC");
                             if (topic != null) {
-                                Set<Channel> channelSet = MqttMessageHandler.SUBSCRIBE_MAP.get(topic);
-                                channelSet.forEach(channel -> {
+                                Channel channel = MqttMessageHandler.SUBSCRIBE_MAP.get(topic);
+                                if (channel != null) {
                                     if (channel.isActive()) {
                                         int remainingLength = 2 + topic.getBytes().length + 2 + messageExt.getBody().length;
                                         MqttFixedHeader mqttFixedHeader = new MqttFixedHeader(MqttMessageType.PUBLISH, false, MqttQoS.AT_LEAST_ONCE, false, remainingLength);
                                         MqttPublishVariableHeader mqttPublishVariableHeader = new MqttPublishVariableHeader(topic, packetId++);
                                         MqttPublishMessage mqttPublishMessage = new MqttPublishMessage(mqttFixedHeader, mqttPublishVariableHeader, Unpooled.wrappedBuffer(messageExt.getBody()));
                                         channel.writeAndFlush(mqttPublishMessage);
+                                    } else {
+                                        System.err.println("channel is not Active!");
                                     }
-                                });
+                                } else {
+                                    System.err.println("还没有终端订阅该topic：" + topic);
+                                }
+
                             }
                         });
-                        return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
+                        return ConsumeOrderlyStatus.SUCCESS;
                     }
                 });
+
 
                 try {
                     consumer.start();
