@@ -36,27 +36,14 @@ public class MqttBroker {
         new Thread(new Runnable() {
             @Override
             public void run() {
-
-                /*
-                 * Instantiate with specified consumer group name.
-                 */
                 DefaultMQPushConsumer consumer = new DefaultMQPushConsumer("consumer-1");
-
                 consumer.setNamesrvAddr("localhost:9876");
-                /*
-                 * Specify where to start in case the specific consumer group is a brand-new one.
-                 */
                 consumer.setConsumeFromWhere(ConsumeFromWhere.CONSUME_FROM_FIRST_OFFSET);
-
-                /*
-                 * Subscribe one more topic to consume.
-                 */
                 try {
                     consumer.subscribe("push", "*");
                 } catch (MQClientException e) {
                     e.printStackTrace();
                 }
-
                 consumer.registerMessageListener(new MessageListenerOrderly() {
                     @Override
                     public ConsumeOrderlyStatus consumeMessage(List<MessageExt> msgs, ConsumeOrderlyContext context) {
