@@ -4,10 +4,7 @@ import com.bearxsh.broker.handler.MqttMessageHandler;
 import com.bearxsh.broker.handler.MqttServerHandler;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelPipeline;
+import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
@@ -19,7 +16,6 @@ import org.apache.rocketmq.client.consumer.listener.ConsumeOrderlyContext;
 import org.apache.rocketmq.client.consumer.listener.ConsumeOrderlyStatus;
 import org.apache.rocketmq.client.consumer.listener.MessageListenerOrderly;
 import org.apache.rocketmq.client.exception.MQClientException;
-import org.apache.rocketmq.client.log.ClientLogger;
 import org.apache.rocketmq.common.consumer.ConsumeFromWhere;
 import org.apache.rocketmq.common.message.MessageExt;
 
@@ -32,7 +28,7 @@ import java.util.List;
 public class MqttBroker {
     private static int packetId = 0;
     public static void main(String[] args) {
-        System.setProperty(ClientLogger.CLIENT_LOG_ADDITIVE, "true");
+        // 端到云需要支持离线消息，云到端不需要支持离线消息？
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -56,12 +52,25 @@ public class MqttBroker {
                                 Channel channel = MqttMessageHandler.SUBSCRIBE_MAP.get(topic);
                                 if (channel != null) {
                                     if (channel.isActive()) {
+
                                         int remainingLength = 2 + topic.getBytes().length + 2 + messageExt.getBody().length;
                                         MqttFixedHeader mqttFixedHeader = new MqttFixedHeader(MqttMessageType.PUBLISH, false, MqttQoS.AT_LEAST_ONCE, false, remainingLength);
                                         MqttPublishVariableHeader mqttPublishVariableHeader = new MqttPublishVariableHeader(topic, packetId++);
                                         MqttPublishMessage mqttPublishMessage = new MqttPublishMessage(mqttFixedHeader, mqttPublishVariableHeader, Unpooled.wrappedBuffer(messageExt.getBody()));
-                                        channel.writeAndFlush(mqttPublishMessage);
+
+                                        channel.writeAndFlush(mqttPublishMessage).addListener(new ChannelFutureListener() {
+                                            @Override
+                                            public void operationComplete(ChannelFuture future) throws Exception {
+                                                if (future.isSuccess()) {
+                                                    System.out.println("发送消息成功！");
+                                                } else {
+                                                    System.err.println("发送消息失败！");
+                                                }
+                                            }
+                                        });
+
                                     } else {
+                                        // TODO 清理该 channel 所占用资源
                                         System.err.println("channel is not Active!");
                                     }
                                 } else {
@@ -104,6 +113,7 @@ public class MqttBroker {
                         }
                     });
             ChannelFuture future = serverBootstrap.bind(port).sync();
+            // TODO 这行可以不用？RocketMQ的NettyRemotingServer就没用
             future.channel().closeFuture().sync();
         } catch (InterruptedException e) {
             e.printStackTrace();
