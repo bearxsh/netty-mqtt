@@ -1,26 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
-<Configuration status="WARN" monitorInterval="600" name="Rocketmq">
-
+<Configuration status="INFO">
     <Appenders>
-        <RocketMQ name="rocketmqAppender" producerGroup="loggerAppender" nameServerAddress="127.0.0.1:9876"
-                  topic="TopicTest" tag="log">
-            <PatternLayout pattern="%d [%p] hahahah %c %m%n"/>
-        </RocketMQ>
-
+        <!-- 默认打印到控制台 -->
         <Console name="Console" target="SYSTEM_OUT">
-            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} %highlight{%-5level} %class{36} %L %M - %msg%xEx%n"/>
+            <!-- 默认打印格式 -->
+            <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"/>
         </Console>
     </Appenders>
-
     <Loggers>
-        <Logger name="rocketmqLogger" level="info">
-            <AppenderRef ref="rocketmqAppender"/>
-        </Logger>
-        <root level="info">
-            <appender-ref ref="Console"/>
-            <AppenderRef ref="rocketmqAppender"/>
-        </root>
+        <!-- 默认打印日志级别为 error -->
+        <Root level="INFO">
+            <AppenderRef ref="Console"/>
+        </Root>
     </Loggers>
-
 </Configuration>

@@ -3,28 +3,17 @@ package com.bearxsh.broker;
 import com.bearxsh.broker.handler.MqttMessageHandler;
 import com.bearxsh.broker.handler.MqttServerHandler;
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.buffer.Unpooled;
-import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
-import io.netty.handler.codec.mqtt.*;
+import io.netty.handler.codec.mqtt.MqttDecoder;
+import io.netty.handler.codec.mqtt.MqttEncoder;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
-import org.apache.rocketmq.client.consumer.DefaultMQPushConsumer;
-import org.apache.rocketmq.client.consumer.listener.ConsumeOrderlyContext;
-import org.apache.rocketmq.client.consumer.listener.ConsumeOrderlyStatus;
-import org.apache.rocketmq.client.consumer.listener.MessageListenerOrderly;
-import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.client.log.ClientLogger;
-import org.apache.rocketmq.common.consumer.ConsumeFromWhere;
-import org.apache.rocketmq.common.message.MessageExt;
-
-import java.time.LocalDateTime;
-import java.util.List;
 
 /**
  * @author bearx
@@ -33,7 +22,7 @@ public class MqttBroker {
     private static int packetId = 0;
     public static void main(String[] args) {
         System.setProperty(ClientLogger.CLIENT_LOG_ADDITIVE, "true");
-        new Thread(new Runnable() {
+  /*      new Thread(new Runnable() {
             @Override
             public void run() {
                 DefaultMQPushConsumer consumer = new DefaultMQPushConsumer("consumer-1");
@@ -83,7 +72,7 @@ public class MqttBroker {
 
                 System.out.printf("Consumer Started.%n");
             }
-        }).start();
+        }).start();*/
 
         int port = 1883;
         NioEventLoopGroup bossGroup = new NioEventLoopGroup(1);
