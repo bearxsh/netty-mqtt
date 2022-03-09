@@ -3,14 +3,14 @@ package com.bearxsh.broker;
 import com.bearxsh.broker.handler.MqttMessageHandler;
 import com.bearxsh.broker.handler.MqttServerHandler;
 import io.netty.bootstrap.ServerBootstrap;
-<<<<<<< HEAD
+
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
-=======
+
 import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
->>>>>>> 79632f2b472a0b0a60436bf74f3cd823a751805f
+
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
@@ -18,9 +18,9 @@ import io.netty.handler.codec.mqtt.MqttDecoder;
 import io.netty.handler.codec.mqtt.MqttEncoder;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
-<<<<<<< HEAD
+
 import org.apache.rocketmq.client.log.ClientLogger;
-=======
+
 import org.apache.rocketmq.client.consumer.DefaultMQPushConsumer;
 import org.apache.rocketmq.client.consumer.listener.ConsumeOrderlyContext;
 import org.apache.rocketmq.client.consumer.listener.ConsumeOrderlyStatus;
@@ -31,7 +31,7 @@ import org.apache.rocketmq.common.message.MessageExt;
 
 import java.time.LocalDateTime;
 import java.util.List;
->>>>>>> 79632f2b472a0b0a60436bf74f3cd823a751805f
+
 
 /**
  * @author bearx
@@ -39,7 +39,6 @@ import java.util.List;
 public class MqttBroker {
     private static int packetId = 0;
     public static void main(String[] args) {
-<<<<<<< HEAD
         System.setProperty(ClientLogger.CLIENT_LOG_ADDITIVE, "true");
   /*      new Thread(new Runnable() {
 =======
