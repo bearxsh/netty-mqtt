@@ -29,7 +29,7 @@ public class MqttBroker {
     private static int packetId = 0;
     public static void main(String[] args) {
         // 端到云需要支持离线消息，云到端不需要支持离线消息？
-        new Thread(new Runnable() {
+/*        new Thread(new Runnable() {
             @Override
             public void run() {
                 DefaultMQPushConsumer consumer = new DefaultMQPushConsumer("consumer-1");
@@ -92,7 +92,7 @@ public class MqttBroker {
 
                 System.out.printf("Consumer Started.%n");
             }
-        }).start();
+        }).start();*/
 
         int port = 1883;
         NioEventLoopGroup bossGroup = new NioEventLoopGroup(1);
@@ -101,6 +101,7 @@ public class MqttBroker {
             ServerBootstrap serverBootstrap = new ServerBootstrap();
             serverBootstrap.group(bossGroup, workerGroup)
                     .channel(NioServerSocketChannel.class)
+                    .handler(new LoggingHandler(LogLevel.INFO))
                     .childHandler(new ChannelInitializer<SocketChannel>() {
                         @Override
                         protected void initChannel(SocketChannel ch) {
